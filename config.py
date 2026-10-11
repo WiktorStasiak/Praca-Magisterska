@@ -65,13 +65,18 @@ BENCHMARK_TICKER: str = "^DJI"
 START_DATE:      str = "2011-01-01"
 END_DATE:        str = "2025-12-31"
 
-TRAIN_START:     str = "2011-01-01"
-TRAIN_END:       str = "2021-12-31"
+# TRAIN_START:     str = "2011-01-01"
+# TRAIN_END:       str = "2021-12-31"
+TRAIN_START:     str = "2018-01-01"
+TRAIN_END:       str = "2022-12-31"
 
-VALIDATION_START: str = "2022-01-01"
+# VALIDATION_START: str = "2022-01-01"
+# VALIDATION_END:   str = "2023-12-31"
+VALIDATION_START: str = "2023-01-01"
 VALIDATION_END:   str = "2023-12-31"
 
 TEST_START:      str = "2024-01-01"
+# TEST_START:      str = "2025-01-01"
 TEST_END:        str = "2025-12-31"
 
 # ─────────────────────────────────────────────────────────
@@ -80,19 +85,20 @@ TEST_END:        str = "2025-12-31"
 # LOOKBACK: model "widzi" LOOKBACK ostatnich dni sesyjnych jako kontekst.
 #   Wartość 60 ≈ 3 miesiące handlowe – wystarczy do uchwycenia
 #   krótko- i średnioterminowych trendów cenowych.
-LOOKBACK: int = 60
+# LOOKBACK: int = 60
+LOOKBACK: int = 30
 
 # LSTM_UNITS: liczba komórek pamięci w każdej warstwie LSTM.
 #   Wyższa wartość = więcej parametrów = większa zdolność modelu,
 #   ale też większe ryzyko przeuczenia i dłuższy czas treningu.
-LSTM_UNITS: int = 128
+LSTM_UNITS: int = 50
 
 # DROPOUT_RATE: odsetek neuronów zerowanych losowo w każdym kroku.
 #   Pełni podwójną rolę:
 #   a) regularyzacja podczas treningu (zmniejsza przeuczenie),
 #   b) źródło losowości w Monte Carlo Dropout podczas inferencji
 #      (generuje rozkład prognoz → estymacja niepewności).
-DROPOUT_RATE: float = 0.20
+DROPOUT_RATE: float = 0.05
 
 # Parametry treningu sieci neuronowej
 EPOCHS:     int = 100   # maksymalna liczba epok (EarlyStopping przerwie wcześniej)
