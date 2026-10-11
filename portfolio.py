@@ -62,6 +62,7 @@ class MarkowitzOptimizer:
     Ograniczenia optymalizacji:
         • Σ w_i = 1  (portfel w pełni zainwestowany)
         • w_i ≥ 0    (zakaz krótkiej sprzedaży – "long-only")
+        • w_i ≤ max_weight (górny limit alokacji na jedną spółkę)
 
     Problem jest nieliniowy, więc używamy SLSQP (Sequential Least Squares
     Programming) z wieloma losowymi punktami startowymi (multi-start),
@@ -71,6 +72,7 @@ class MarkowitzOptimizer:
         risk_free: Dzienna stopa wolna od ryzyka.
         trading_days: Liczba sesji giełdowych w roku (252 dla USA).
         n_restarts: Liczba losowych punktów startowych optymalizacji.
+        max_weight: Maksymalna waga pojedynczego aktywa w portfelu.
     """
 
     def __init__(
@@ -78,6 +80,7 @@ class MarkowitzOptimizer:
         risk_free:    float = 0.045 / 252,
         trading_days: int   = 252,
         n_restarts:   int   = 20,
+        max_weight:   float = 0.15,
     ) -> None:
         """Inicjalizuje parametry optymalizatora.
 
@@ -90,10 +93,13 @@ class MarkowitzOptimizer:
             n_restarts: Liczba losowych punktów startowych.
                         Więcej restartów → lepsze optimum globalne,
                         ale dłuższy czas obliczeń.
+            max_weight: Maksymalna waga pojedynczego aktywa (np. 0.15 = 15%).
+                        Wymusza dywersyfikację i redukuje ryzyko stężeń.
         """
         self.risk_free:    float = risk_free
         self.trading_days: int   = trading_days
         self.n_restarts:   int   = n_restarts
+        self.max_weight:   float = max_weight
 
     def portfolio_performance(
         self,
@@ -165,12 +171,19 @@ class MarkowitzOptimizer:
 
         Returns:
             Optymalny wektor wag portfela, shape (n_assets,).
-            Zawsze spełnia: Σw=1, 0≤w_i≤1.
+            Zawsze spełnia: Σw=1, 0≤w_i≤max_weight.
 
         Raises:
             RuntimeError: Jeśli żaden restart optymalizacji nie zakończy się sukcesem.
         """
         n: int = len(mu)
+
+        # Sprawdzenie matematycznej możliwości rozwiązania
+        if n * self.max_weight < 1.0:
+            raise ValueError(
+                f"Niemożliwe ograniczenia: {n} aktywów z limitem {self.max_weight:.1%} "
+                "nie może zsumować się do 100% kapitału."
+            )
 
         # Ograniczenie równościowe: suma wag musi być równa 1
         # (portfel w pełni zainwestowany – brak gotówki)
@@ -178,9 +191,9 @@ class MarkowitzOptimizer:
             {"type": "eq", "fun": lambda w: np.sum(w) - 1.0}
         ]
 
-        # Ograniczenia nierównościowe: każda waga w przedziale [0, 1]
-        # (zakaz krótkiej sprzedaży = long-only portfolio)
-        bounds = [(0.0, 1.0)] * n
+        # Ograniczenia nierównościowe: każda waga w przedziale [0, max_weight]
+        # (zakaz krótkiej sprzedaży = long-only portfolio + limit stężenia)
+        bounds = [(0.0, self.max_weight)] * n
 
         # Funkcja celu: minimalizujemy UJEMNY Sharpe (scipy minimalizuje)
         def neg_sharpe(w: np.ndarray) -> float:
@@ -191,9 +204,19 @@ class MarkowitzOptimizer:
         best_result: Optional[OptimizeResult] = None
 
         for restart_idx in range(self.n_restarts):
-            # Punkt startowy: losowy portfel z rozkładu Dirichleta
-            # Dirichlet(α=1) = rozkład jednostajny na sympleksie
-            w0: np.ndarray = np.random.dirichlet(np.ones(n))
+            # Punkt startowy: losowy portfel z rozkładu Dirichleta, a następnie
+            # przycięty do max_weight i znormalizowany, aby ułatwić optymalizatorowi
+            # znalezienie punktu w dozwolonej przestrzeni.
+            w0 = np.random.dirichlet(np.ones(n))
+            w0 = np.clip(w0, 0.0, self.max_weight)
+            # Jeśli po przycięciu suma jest za mała (bardzo rzadkie dla n=30, max=0.15),
+            # równomiernie zwiększamy, trzymając się limitu (uproszczony fallback punktu startowego)
+            while w0.sum() < 0.999:
+                diff = 1.0 - w0.sum()
+                available_space = self.max_weight - w0
+                if available_space.sum() == 0: break
+                w0 += diff * (available_space / available_space.sum())
+            w0 /= w0.sum()
 
             try:
                 result: OptimizeResult = minimize(
@@ -209,7 +232,7 @@ class MarkowitzOptimizer:
                 )
 
                 # Zachowaj wynik jeśli jest lepszy (mniejszy neg_sharpe)
-                if best_result is None or result.fun < best_result.fun:
+                if best_result is None or (result.success and result.fun < best_result.fun):
                     best_result = result
 
             except Exception as exc:
@@ -220,8 +243,13 @@ class MarkowitzOptimizer:
                         f"zakończyły się niepowodzeniem: {exc}"
                     )
 
+        if best_result is None or not best_result.success:
+            print("  [WARN] SLSQP mógł nie znaleźć globalnego optimum spełniającego restrykcje max_weight.")
+            if best_result is None:
+                raise RuntimeError("Brak jakiegokolwiek poprawnego wyniku optymalizacji.")
+
         # Klipowanie numeryczne: usuwa ewentualne drobne ujemne wagi (artefakty)
-        weights: np.ndarray = np.clip(best_result.x, 0.0, 1.0)
+        weights: np.ndarray = np.clip(best_result.x, 0.0, self.max_weight)
 
         # Renormalizacja: zapewniamy dokładną sumę = 1 po klipowaniu
         weights /= weights.sum()

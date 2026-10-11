@@ -72,10 +72,15 @@ class Plotter:
 
         Args:
             fig: Obiekt Figure matplotlib do zapisu.
-            filename: Nazwa pliku (bez ścieżki, z rozszerzeniem .png).
+            filename: Nazwa pliku (lub ścieżka względna, z rozszerzeniem .png).
         """
         path = self.output_dir / filename
+
+        # Automatycznie twórz katalog (wraz z podkatalogami, jeśli nie istnieją):
+        path.parent.mkdir(parents=True, exist_ok=True)
+
         fig.savefig(path, dpi=150, bbox_inches="tight")
+        plt.close(fig)  # Opcjonalnie: zwalnia pamięć po zapisie wykresu
         print(f"  ✓ Zapisano: {path}")
 
     # ── Wykres 1: Krzywa uczenia LSTM ──────────────────────────────────

@@ -14,7 +14,8 @@ wielu plików.
 # 30 największych i najbardziej wpływowych spółek notowanych na
 # giełdach NYSE i NASDAQ, obliczany od 1896 roku.
 
-TICKERS: dict[str, str] = {
+TICKERS: dict[str, str] = \
+{
     "NVIDIA Corporation": "NVDA",          # półprzewodniki / AI
     "Apple Inc.": "AAPL",                  # technologia / konsumer
     "Microsoft Corporation": "MSFT",       # oprogramowanie / chmura
@@ -65,15 +66,15 @@ BENCHMARK_TICKER: str = "^DJI"
 START_DATE:      str = "2011-01-01"
 END_DATE:        str = "2025-12-31"
 
-# TRAIN_START:     str = "2011-01-01"
-# TRAIN_END:       str = "2021-12-31"
-TRAIN_START:     str = "2018-01-01"
-TRAIN_END:       str = "2022-12-31"
+TRAIN_START:     str = "2011-01-01"
+TRAIN_END:       str = "2021-12-31"
+# TRAIN_START:     str = "2018-01-01"
+# TRAIN_END:       str = "2022-12-31"
 
-# VALIDATION_START: str = "2022-01-01"
-# VALIDATION_END:   str = "2023-12-31"
-VALIDATION_START: str = "2023-01-01"
+VALIDATION_START: str = "2022-01-01"
 VALIDATION_END:   str = "2023-12-31"
+# VALIDATION_START: str = "2023-01-01"
+# VALIDATION_END:   str = "2023-12-31"
 
 TEST_START:      str = "2024-01-01"
 # TEST_START:      str = "2025-01-01"
@@ -85,8 +86,8 @@ TEST_END:        str = "2025-12-31"
 # LOOKBACK: model "widzi" LOOKBACK ostatnich dni sesyjnych jako kontekst.
 #   Wartość 60 ≈ 3 miesiące handlowe – wystarczy do uchwycenia
 #   krótko- i średnioterminowych trendów cenowych.
-# LOOKBACK: int = 60
-LOOKBACK: int = 30
+LOOKBACK: int = 60
+# LOOKBACK: int = 30
 
 # LSTM_UNITS: liczba komórek pamięci w każdej warstwie LSTM.
 #   Wyższa wartość = więcej parametrów = większa zdolność modelu,
