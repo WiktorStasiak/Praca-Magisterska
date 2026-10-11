@@ -22,7 +22,7 @@ Zależności:
 Struktura projektu:
     dji_optimizer/
     ├── config.py                  # stałe i parametry
-    ├── main.py                    #
+    ├── main.py                    # główny skrypt uruchamiający pipeline
     ├── data/
     │   └── loader.py              # DataLoader, SequenceBuilder
     ├── models/

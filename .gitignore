@@ -1,0 +1,14 @@
+# Środowisko wirtualne
+venv/
+.venv/
+env/
+
+# Pamięć podręczna Pythona
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Wygenerowane wykresy i wyniki (zdefiniowane w skryptach)
+plots/
+*.png
